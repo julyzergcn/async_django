@@ -8,4 +8,5 @@ urlpatterns = [
     path('', views.index),
     path('async-view/', views.async_view),
     path('sync-view/', views.sync_view),
+    path('concurrent-call/', views.concurrent_call),
 ]

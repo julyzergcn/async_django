@@ -1,36 +1,50 @@
-import asyncio, time
+import asyncio, time, random
 import httpx
 
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 
 
 def index(request):
-    return JsonResponse({'ret': 'hello'})
+    return JsonResponse({'ret': 'index'})
 
 
 async def http_call_async():
-  for num in range(1,6):
-    await asyncio.sleep(1)
-    print(num)
-  async with httpx.AsyncClient() as client:
-    r = await client.get("http://localhost:8000")
-    print(r)
+    for num in range(random.randint(1, 3)):
+        await asyncio.sleep(1)
+        print(num + 1)
+    async with httpx.AsyncClient() as client:
+        r = await client.get("http://localhost:8000")
+        print(r)
 
 
 async def async_view(request):
-  loop = asyncio.get_event_loop()
-  loop.create_task(http_call_async())
-  return HttpResponse('Non-blocking HTTP request')
-
-
-def http_call_sync():
-    for num in range(1, 6):
-        time.sleep(1)
-        print(num)
-    r = httpx.get("http://localhost:8000")
-    print(r)
+    loop = asyncio.get_event_loop()
+    loop.create_task(http_call_async())
+    return JsonResponse({'ret': 'Async view'})
 
 
 def sync_view(request):
-    http_call_sync()
-    return HttpResponse("Blocking HTTP request")
+    # sync call
+    for num in range(random.randint(1, 3)):
+        time.sleep(1)
+        print(num + 1)
+    r = httpx.get("http://localhost:8000")
+    print(r)
+    return JsonResponse({'ret': 'Sync view'})
+
+
+async def concurrent_call(request):
+    context = {}
+    try:
+        async with httpx.AsyncClient() as client:
+            res_async, res_sync = await asyncio.gather(
+                client.get('http://localhost:8000/async-view/'),
+                client.get('http://localhost:8000/sync-view/'),
+            )
+            if res_async.status_code == httpx.codes.OK:
+                context['async_view'] = res_async.json()
+            if res_sync.status_code == httpx.codes.OK:
+                context['sync_view'] = res_sync.json()
+    except httpx.RequestError as exc:
+        print(f'Error requesting {exc.request.url!r}')
+    return JsonResponse(context)
