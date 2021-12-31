@@ -5,5 +5,7 @@ from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', views.index)
+    path('', views.index),
+    path('async-view/', views.async_view),
+    path('sync-view/', views.sync_view),
 ]
